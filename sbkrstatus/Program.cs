@@ -3,6 +3,17 @@
 namespace sbkrstatus;
 
 // Le client http doit être instancier une fois par appli au lieu de chauqe usage d'ou le static
+
+/*  200-299 : UP
+ *  300-399 : UP (redireciton)
+ *  400-499 : DEGRADED Serveur joignable mais problème coté requête / acces
+ *  500-599: DOWN
+ *  Timeout : DOWN 
+ *  DNS Error : DOWN
+ *  Connection refused : DOWN
+ * 
+ * 
+ */
 class Program
 {
     static readonly HttpClient client = new HttpClient();
@@ -30,4 +41,19 @@ class Program
             stopwatch.Stop();
         }
     }
+
+    public string MakeRequest(string url)
+    {
+        try
+        {
+            var response = client.GetAsync(url).Result;
+            response.EnsureSuccessStatusCode();
+            return response.StatusCode.ToString();
+        }
+        catch (HttpRequestException e)
+        {
+            return e.StatusCode.ToString();
+        }
+    }
+    
 }
