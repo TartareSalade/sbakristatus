@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Net;
 
 namespace sbkrstatus;
 
@@ -19,22 +20,30 @@ class Program
     static readonly HttpClient client = new HttpClient();
     static async Task Main(string[] args)
     {
+        
+    }
+
+    public async Task<MonitorResult> Checkurlsync(string url)
+    {
         Stopwatch stopwatch = new Stopwatch();
         stopwatch.Start();
         try
         {
-            var response = await client.GetAsync("https://gitbbbbb.sbkr.fr/");
-            response.EnsureSuccessStatusCode(); // interet du try catch si execption on le catch (status != 2xx)
-            string responseBody = await response.Content.ReadAsStringAsync();
+            var response = await client.GetAsync(url);
+            // On récupere le status code au lieu de ensureSuccessStatusCode pour pouvoir gérer les codes 4xx et 5xx
+            var statusCode = response.StatusCode;
+            var responseTime = stopwatch.Elapsed;
+            MonitorStatus status = GetMonitorStatus(statusCode);
+            return new MonitorResult(url, status, statusCode, responseTime, null);
 
-            Console.WriteLine(response.StatusCode);
-            Console.WriteLine("Temps de la requete : " + stopwatch.ElapsedMilliseconds + " ms");
         }
         catch (HttpRequestException e)
         {
+            // Gestion des exceptions de requête HTTP
             Console.WriteLine("\nException Caught !");
             Console.WriteLine(e.StatusCode);
             Console.WriteLine(e.Message);
+            return new MonitorResult(url, MonitorStatus.DOWN, 0, stopwatch.Elapsed, e.Message);
         }
         finally
         {
@@ -42,18 +51,38 @@ class Program
         }
     }
 
-    public string MakeRequest(string url)
+    public MonitorStatus GetMonitorStatus(HttpStatusCode statusCode)
     {
-        try
+        MonitorStatus status;
+        if ((int)statusCode >= 200 && (int)statusCode <= 299)
         {
-            var response = client.GetAsync(url).Result;
-            response.EnsureSuccessStatusCode();
-            return response.StatusCode.ToString();
+            status = MonitorStatus.UP;
         }
-        catch (HttpRequestException e)
+        else if ((int)statusCode >= 300 && (int)statusCode <= 399)
         {
-            return e.StatusCode.ToString();
+            status = MonitorStatus.UP;
         }
+        else if ((int)statusCode >= 400 && (int)statusCode <= 499)
+        {
+            status = MonitorStatus.DEGRAGED;
+        }
+        else
+        {
+            status = MonitorStatus.DOWN;
+        }
+
+        return status;
     }
     
+    public void DispalyResult(MonitorResult result)
+    {
+        Console.WriteLine($"Url: {result.Url}");
+        Console.WriteLine($"Status: {result.Status}");
+        Console.WriteLine($"HttpStatusCode: {result.HttpStatusCode}");
+        Console.WriteLine($"ResponseTimeMs: {result.ResponseTimeMs.TotalMilliseconds} ms");
+        if (result.ErrorMssage != null)
+        {
+            Console.WriteLine($"ErrorMssage: {result.ErrorMssage}");
+        }
+    }
 }
