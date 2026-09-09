@@ -20,6 +20,8 @@ class Program
     static readonly HttpClient client = new HttpClient();
     static async Task Main(string[] args)
     {
+        var result = await Checkurlsync("https://www.google.com");
+        DisplayResult(result);
         
     }
 
