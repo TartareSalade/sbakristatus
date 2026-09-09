@@ -7,18 +7,17 @@ public class MonitorResult
 
     public string Url { get; set; }
     public MonitorStatus Status { get; set; }
-    public HttpStatusCode HttpStatusCode { get; set; }
+    public HttpStatusCode? HttpStatusCode { get; set; }
     public long ResponseTimeMs { get; set; }
-    public string ErrorMssage { get; set; }
+    public string ErrorMessage { get; set; }
 
-    public MonitorResult(string url, MonitorStatus status, HttpStatusCode statusCode, long responseTimeMs,
-        string errorMssage)
+    public MonitorResult(string url, MonitorStatus status, long responseTimeMs)
     {
         this.Url = url;
         this.Status = status;
-        this.HttpStatusCode = statusCode;
+        this.HttpStatusCode = null;
         this.ResponseTimeMs = responseTimeMs;
-        this.ErrorMssage = errorMssage;
+        this.ErrorMessage = null;
     }
 
 }
