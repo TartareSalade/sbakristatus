@@ -23,7 +23,7 @@ class Program
         
     }
 
-    public async Task<MonitorResult> Checkurlsync(string url)
+    public static async Task<MonitorResult> Checkurlsync(string url)
     {
         Stopwatch stopwatch = new Stopwatch();
         stopwatch.Start();
@@ -34,16 +34,25 @@ class Program
             var statusCode = response.StatusCode;
             var responseTime = stopwatch.Elapsed;
             MonitorStatus status = GetMonitorStatus(statusCode);
-            return new MonitorResult(url, status, statusCode, responseTime, null);
+            return new MonitorResult(url, status, (long)responseTime.TotalMilliseconds)
+            {
+                HttpStatusCode = statusCode
+            };
 
         }
+        
+        
         catch (HttpRequestException e)
         {
+            var responseTime = stopwatch.Elapsed;
             // Gestion des exceptions de requête HTTP
             Console.WriteLine("\nException Caught !");
             Console.WriteLine(e.StatusCode);
             Console.WriteLine(e.Message);
-            return new MonitorResult(url, MonitorStatus.DOWN, 0, stopwatch.Elapsed, e.Message);
+            return new MonitorResult(url, MonitorStatus.DOWN, 0)
+            {
+                ErrorMessage = e.Message
+            };
         }
         finally
         {
@@ -51,7 +60,7 @@ class Program
         }
     }
 
-    public MonitorStatus GetMonitorStatus(HttpStatusCode statusCode)
+    public static MonitorStatus GetMonitorStatus(HttpStatusCode statusCode)
     {
         MonitorStatus status;
         if ((int)statusCode >= 200 && (int)statusCode <= 299)
@@ -74,15 +83,15 @@ class Program
         return status;
     }
     
-    public void DispalyResult(MonitorResult result)
+    public static void DisplayResult(MonitorResult result)
     {
         Console.WriteLine($"Url: {result.Url}");
         Console.WriteLine($"Status: {result.Status}");
         Console.WriteLine($"HttpStatusCode: {result.HttpStatusCode}");
-        Console.WriteLine($"ResponseTimeMs: {result.ResponseTimeMs.TotalMilliseconds} ms");
-        if (result.ErrorMssage != null)
+        Console.WriteLine($"ResponseTimeMs: {result.ResponseTimeMs} ms");
+        if (result.ErrorMessage != null)
         {
-            Console.WriteLine($"ErrorMssage: {result.ErrorMssage}");
+            Console.WriteLine($"ErrorMessage: {result.ErrorMessage}");
         }
     }
 }
